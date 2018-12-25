@@ -12,7 +12,7 @@ class SC_CLI():
         except: return "SCEXCEPTION"
     
     def getFollowing(self, ID):
-        try: return self.SC.get(f'/users/{ID}/followings')
+        try: return self.SC.get(f'/users/{str(ID)}/followings')
         except: return "SCEXCEPTION"
     
     def getFavoriteTrackArtists(self, ID):
