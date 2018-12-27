@@ -6,4 +6,3 @@ class PredictPrice():
 
 if __name__ == "__main__":
     pp = PredictPrice()
-    pp.SC_data.getCurrentArtistFollows()

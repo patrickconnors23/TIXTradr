@@ -3,7 +3,7 @@ import heapq as HQ
 import numpy as np 
 import pandas as pd
 from tqdm import tqdm
-from soundCloud import SC_CLI
+from clients.soundCloud import SC_CLI
 from helpers import getDateStr
 
 class ScrapeSCData():
@@ -85,7 +85,7 @@ class ScrapeSCData():
         dateStr = getDateStr()
         tqdm.pandas()
         print("Updating SC artist data...")
-        self.artistDF[f"numFollowers {dateStr} 2"] = self.artistDF["scID"].progress_apply(lambda x: self.client.getNumFollowers(int(x)))
+        self.artistDF[f"numFollowers {dateStr}"] = self.artistDF["scID"].progress_apply(lambda x: self.client.getNumFollowers(int(x)))
         self.checkHead()
         self.pickleArtistData()
 
