@@ -18,20 +18,10 @@ class TICKETMASTER_CLI(TICKET_CLI):
         # Add query params
         for key, val in params.items(): p[key] = val
         # Send initial response
-        response = requests.get(self.baseURL + endpoint + "/" + obj, params=p)
-        return response.json()
+        return requests.get(self.baseURL + endpoint + "/" + obj, params=p).json()
     
     def getEvent(self, ID):
         pass
-    
-    def stripEvent(self, event):
-        venuify = lambda x: {"name": x["name"], "city": x["city"]["name"]} 
-        return {
-            "id": event["id"],
-            "date": event["dates"]["start"]["dateTime"],
-            "price": event.get("priceRanges"),
-            "venue": venuify(event["_embedded"]["venues"][0])
-        }
     
     def getEventPrice(self, ID):
         try:
@@ -41,13 +31,36 @@ class TICKETMASTER_CLI(TICKET_CLI):
             print(f"Couldn't get prices for artist with ID: {ID}")
             return []
 
+    def extractPrice(self, price):
+        if price:
+            price = price[0]
+            minP, maxP, currency = price.get("min"), price.get("max"), price.get("currency")
+        else:
+            minP, maxP, currency = None, None, None
+        return {"minPrice": minP, "maxPrice": maxP, "currency": currency}
+        
+    def extractEventData(self, event):
+        venuify = lambda x: {"name": x["name"], "city": x["city"]["name"]} 
+        return {
+            "id": f"TM:{event['id']}",
+            "date": event["dates"]["start"]["localDate"],
+            "price": self.extractPrice(event.get("priceRanges")),
+            "venue": venuify(event["_embedded"]["venues"][0])
+        }
+
     def getEventsForPerformer(self, performerID):
+        """
+        id -> {id, date, price, venue}
+        """
         q = {"attractionId": performerID, "source": "ticketmaster"}
         data = self.getAPI(endpoint=self.eventsEndpoint, params=q)
         events = data["_embedded"]["events"]
-        return  [self.stripEvent(event) for event in events]
+        return  [self.extractEventData(event) for event in events]
 
     def getPerformerLiteFromName(self, name):
+        """
+        name -> {id, name, numEvents}
+        """
         try:
             data = self.getAPI(endpoint=self.performersEndpoint, params={"keyword": name})
             artists = data["_embedded"]["attractions"]
@@ -60,6 +73,5 @@ class TICKETMASTER_CLI(TICKET_CLI):
 if __name__ == "__main__":
     TMC = TICKETMASTER_CLI()
     skril = TMC.getPerformerLiteFromName("Skrillex")
-    event = TMC.getEventsForPerformer(skril["id"])
-    eventID = event[0]["id"]
-    TMC.getEventPrice(eventID)
+    events = TMC.getEventsForPerformer(skril["id"])
+    pp(events)
