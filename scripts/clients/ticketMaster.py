@@ -1,11 +1,14 @@
-import requests
+import requests, sys, os
 from pprint import pprint as pp
 
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
+from config import TM_API_KEY
 from ticketClient import TICKET_CLI
 
 class TICKETMASTER_CLI(TICKET_CLI):
     def __init__(self):
-        self.CLIENT_ID = "6smyQOQKHOgvlHkyqCqmfuYvQOq1LnhY"
+        self.CLIENT_ID = TM_API_KEY
         self.baseURL = "https://app.ticketmaster.com"
         self.pricesEndpoint = "/commerce/v2/events" # /{eventID}/offers
         self.eventsEndpoint = "/discovery/v2/events" # /{eventID}/offers
@@ -65,13 +68,14 @@ class TICKETMASTER_CLI(TICKET_CLI):
             data = self.getAPI(endpoint=self.performersEndpoint, params={"keyword": name})
             artists = data["_embedded"]["attractions"]
             stripArtist = lambda x: {"id": x["id"], "name": x["name"], "numEvents": len(x["upcomingEvents"])}
-            return [stripArtist(artist) for artist in artists][0]
+            return [stripArtist(artist) for artist in artists]
         except:
             print(f"Couldn't find artist with name: {name}")
             return []
 
 if __name__ == "__main__":
     TMC = TICKETMASTER_CLI()
-    skril = TMC.getPerformerLiteFromName("Skrillex")
+    skril = TMC.getPerformerLiteFromName("Diplo")[0]
+    print(skril)
     events = TMC.getEventsForPerformer(skril["id"])
     pp(events)

@@ -6,7 +6,7 @@ from tqdm import tqdm
 from clients.soundCloud import SC_CLI
 from helpers import getDateStr
 
-class ScrapeSCData():
+class SCData():
     def __init__(self, numArtists=0, filePath="SCFollowers.pkl"):
         self.client = SC_CLI()
         self.path = filePath
@@ -91,4 +91,4 @@ class ScrapeSCData():
 
 
 if __name__ == "__main__":
-    ScrapeSCData()
+    SCData()

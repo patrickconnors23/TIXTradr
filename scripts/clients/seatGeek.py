@@ -1,11 +1,14 @@
-import requests
+import requests, sys, os
 from pprint import pprint as pp
 
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+
+from config import SG_CLIENT_ID
 from ticketClient import TICKET_CLI
 
 class SEAT_GEEK_CLI(TICKET_CLI):
     def __init__(self):
-        self.CLIENT_ID = "MTQ1ODk2Mzl8MTU0NTc3MTgzMC43"
+        self.CLIENT_ID = SG_CLIENT_ID
         self.baseURL = "https://api.seatgeek.com/2"
         self.eventsEndpoint = "/events"
         self.performersEndpoint = "/performers"
@@ -53,11 +56,11 @@ class SEAT_GEEK_CLI(TICKET_CLI):
         data = self.getAPI(endpoint=self.performersEndpoint, params={"q": name})
         performers = data["performers"]
         stripInfo = lambda x: {"id": x["id"], "name": x["name"], "numEvents": x["num_upcoming_events"]} 
-        return [stripInfo(p) for p in performers][0]
+        return [stripInfo(p) for p in performers]
 
 if __name__ == "__main__":
     client = SEAT_GEEK_CLI()
-    artist = client.getPerformerLiteFromName("Skrillex")
+    artist = client.getPerformerLiteFromName("Diplo")[0]
     events = client.getEventsForPerformer(artist["id"])
     pp(events)
 
