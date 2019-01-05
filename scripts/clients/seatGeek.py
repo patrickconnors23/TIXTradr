@@ -1,4 +1,4 @@
-import requests, sys, os
+import requests, sys, os, datetime
 from pprint import pprint as pp
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
@@ -25,38 +25,55 @@ class SEAT_GEEK_CLI(TICKET_CLI):
     def getEvent(self, ID):
         return self.getAPI(self.eventsEndopint, str(ID))
     
-    def extractEventData(self, event):
+    def getDateStr(self):
+        now = datetime.datetime.now()
+        return f"{now.year}-{now.month}-{now.day}"
+
+    def extractEventData(self, event, performerID):
         venuify = lambda x: {"city": x["city"], "name": x["name"]}
         parseDate = lambda x: x.split("T")[0]
+        artistify = lambda x: [i["name"] for i in x][:4] if len(x) > 0 else x
         return {
             "id": f"SG:{event['id']}",
             "date": parseDate(event["datetime_local"]),
-            "median_price": event["stats"]["median_price"],
-            "numListings": event["stats"]["listing_count"],
+            # "median_price": event["stats"]["median_price"],
+            # "numListings": event["stats"]["listing_count"],
             "price": {
                 "minPrice": event["stats"]["lowest_price"],
                 "maxPrice": event["stats"]["highest_price"],
                 "currency": "USD",
             },
+            "title": event["title"],
             "venue": venuify(event["venue"]),
+            "artists": artistify(event["performers"]),
+            "dateAccessed": self.getDateStr(),
+            "platform":"SG",
+            "artistID": performerID
         }
 
     def getEventsForPerformer(self, performerID):
         """
         id -> {date, price, venue}
         """
-        data = self.getAPI(endpoint=self.eventsEndpoint, params={"performers.id": performerID})
-        events = [self.extractEventData(event) for event in data["events"]]
-        return events
+        try:
+            data = self.getAPI(endpoint=self.eventsEndpoint, params={"performers.id": int(performerID)})
+            events = [self.extractEventData(event, performerID) for event in data["events"]]
+            return events
+        except: 
+            return []
 
     def getPerformerLiteFromName(self, name):
         """
         name -> {id, name, numEvents}
         """
-        data = self.getAPI(endpoint=self.performersEndpoint, params={"q": name})
-        performers = data["performers"]
-        stripInfo = lambda x: {"id": x["id"], "name": x["name"], "numEvents": x["num_upcoming_events"]} 
-        return [stripInfo(p) for p in performers]
+        try:
+            data = self.getAPI(endpoint=self.performersEndpoint, params={"q": name})
+            performers = data["performers"]
+            stripInfo = lambda x: {"id": x["id"], "name": x["name"], "numEvents": x["num_upcoming_events"]} 
+            return [stripInfo(p) for p in performers]
+        except:
+            # print(f"Couldn't find artist with name: {name}")
+            return []
 
 if __name__ == "__main__":
     client = SEAT_GEEK_CLI()

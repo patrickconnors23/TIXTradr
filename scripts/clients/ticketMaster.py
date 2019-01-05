@@ -1,4 +1,4 @@
-import requests, sys, os
+import requests, sys, os, datetime
 from pprint import pprint as pp
 
 sys.path.append(os.path.join(os.path.dirname(__file__)))
@@ -42,23 +42,37 @@ class TICKETMASTER_CLI(TICKET_CLI):
             minP, maxP, currency = None, None, None
         return {"minPrice": minP, "maxPrice": maxP, "currency": currency}
         
-    def extractEventData(self, event):
+    def getDateStr(self):
+        now = datetime.datetime.now()
+        return f"{now.year}-{now.month}-{now.day}"
+
+    def extractEventData(self, event, performerID):
         venuify = lambda x: {"name": x["name"], "city": x["city"]["name"]} 
+        artistify = lambda att: [x["name"] for x in att][:4] if len(att) > 0 else att
         return {
             "id": f"TM:{event['id']}",
             "date": event["dates"]["start"]["localDate"],
             "price": self.extractPrice(event.get("priceRanges")),
-            "venue": venuify(event["_embedded"]["venues"][0])
+            "venue": venuify(event["_embedded"]["venues"][0]),
+            "title": event["name"],
+            "artistID": performerID,
+            "artists": artistify(event["_embedded"]["attractions"]),
+            "dateAccessed": self.getDateStr(),
+            "platform":"TM"
         }
 
     def getEventsForPerformer(self, performerID):
         """
         id -> {id, date, price, venue}
         """
-        q = {"attractionId": performerID, "source": "ticketmaster"}
-        data = self.getAPI(endpoint=self.eventsEndpoint, params=q)
-        events = data["_embedded"]["events"]
-        return  [self.extractEventData(event) for event in events]
+        try:
+            q = {"attractionId": performerID, "source": "ticketmaster"}
+            data = self.getAPI(endpoint=self.eventsEndpoint, params=q)
+            events = data["_embedded"]["events"]
+            return  [self.extractEventData(event, performerID) for event in events]
+        except:
+            print("fail")
+            return []
 
     def getPerformerLiteFromName(self, name):
         """
@@ -70,7 +84,7 @@ class TICKETMASTER_CLI(TICKET_CLI):
             stripArtist = lambda x: {"id": x["id"], "name": x["name"], "numEvents": len(x["upcomingEvents"])}
             return [stripArtist(artist) for artist in artists]
         except:
-            print(f"Couldn't find artist with name: {name}")
+            # print(f"Couldn't find artist with name: {name}")
             return []
 
 if __name__ == "__main__":
