@@ -7,13 +7,13 @@ from clients.soundCloud import SC_CLI
 from helpers import getDateStr
 
 class SCData():
-    def __init__(self, numArtists=0, filePath="SCFollowers.pkl"):
+    def __init__(self, numArtists=0, filePath="data/SCFollowers.csv"):
         self.client = SC_CLI()
         self.path = filePath
         if numArtists > 0:
             self.loadArtistsFromSC(numArtists)
         
-        self.artistDF = pd.read_pickle(self.path)
+        self.artistDF = pd.read_csv(self.path, index_col=0)
     
     def checkHead(self):
         sortedDF = self.artistDF.sort_values(by=['numFollowers 12/25/2018'],
@@ -79,7 +79,7 @@ class SCData():
     
     def pickleArtistData(self):
         print("Pickling data")
-        self.artistData.to_pickle(self.path)
+        self.artistDF.to_csv("data/SCFollowers.csv")
     
     def getCurrentArtistFollows(self):
         dateStr = getDateStr()
@@ -91,4 +91,5 @@ class SCData():
 
 
 if __name__ == "__main__":
-    SCData()
+    x = SCData()
+    x.getCurrentArtistFollows()

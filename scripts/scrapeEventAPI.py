@@ -16,7 +16,7 @@ class ScrapeTicketData():
     Scrape ticket data from ticketing APIS..
     seatgeek, ticketmaster, etc
     """
-    def __init__(self, client="SG", eventPath="eventDF.csv", mapPath="platformMapDF.csv", shouldReadData=False):
+    def __init__(self, client="SG", eventPath="data/eventDF.csv", mapPath="data/platformMapDF.csv", shouldReadData=False):
         self.SG = SEAT_GEEK_CLI()
         self.TM = TICKETMASTER_CLI()
         self.eventsPath = eventPath
@@ -41,11 +41,14 @@ class ScrapeTicketData():
             return pd.DataFrame()
     
     def setClient(self, client):
-        self.clientName = client
         if client == "SG":
             self.client = self.SG
+            self.clientName = client
         elif client == "TM":
             self.client = self.TM
+            self.clientName = client
+        else:
+            print(f"Couldnt switch to client: {client}")
     
     def getArtistPlatformID(self, name):
         performers = self.client.getPerformerLiteFromName(name)
@@ -90,7 +93,7 @@ class ScrapeTicketData():
 
     def getAllEvents(self):
         print(f"Fetching {self.clientName} events for all artists")
-        events = self.platformArtistMapDF[10:20].apply(self.getArtistEvents, axis=1)
+        events = self.platformArtistMapDF.progress_apply(self.getArtistEvents, axis=1)
         events = [j for i in events for j in i]
         newEventsDF = pd.DataFrame(events)
         self.eventsListDF = self.eventsListDF.append(newEventsDF)

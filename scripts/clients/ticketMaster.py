@@ -47,13 +47,13 @@ class TICKETMASTER_CLI(TICKET_CLI):
         return f"{now.year}-{now.month}-{now.day}"
 
     def extractEventData(self, event, performerID):
-        venuify = lambda x: {"name": x["name"], "city": x["city"]["name"]} 
         artistify = lambda att: [x["name"] for x in att][:4] if len(att) > 0 else att
         return {
             "id": f"TM:{event['id']}",
             "date": event["dates"]["start"]["localDate"],
             "price": self.extractPrice(event.get("priceRanges")),
-            "venue": venuify(event["_embedded"]["venues"][0]),
+            "venueName": event["_embedded"]["venues"][0]["name"],
+            "city": event["_embedded"]["venues"][0]["city"]["name"],
             "title": event["name"],
             "artistID": performerID,
             "artists": artistify(event["_embedded"]["attractions"]),
@@ -66,12 +66,14 @@ class TICKETMASTER_CLI(TICKET_CLI):
         id -> {id, date, price, venue}
         """
         try:
-            q = {"attractionId": performerID, "source": "ticketmaster"}
-            data = self.getAPI(endpoint=self.eventsEndpoint, params=q)
-            events = data["_embedded"]["events"]
-            return  [self.extractEventData(event, performerID) for event in events]
+            if type(performerID) == str:
+                q = {"attractionId": performerID, "source": "ticketmaster"}
+                data = self.getAPI(endpoint=self.eventsEndpoint, params=q)
+                events = data["_embedded"]["events"]
+                return  [self.extractEventData(event, performerID) for event in events]
+            else:
+                return []
         except:
-            print("fail")
             return []
 
     def getPerformerLiteFromName(self, name):
