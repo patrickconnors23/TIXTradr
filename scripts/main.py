@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer, StandardScaler
 
+from models.linReg import linReg
 from helpers import getRates, convertToDollars, getDaysBetween, getDayOfWeek
 
 class PredictPrice():
@@ -16,6 +17,7 @@ class PredictPrice():
         self.idMap = pd.read_csv("data/platformMapDf.csv", index_col=0)
         self.currencies = getRates()
         self.processedData = self.preProcess()
+        self.model = linReg()
         tqdm.pandas()
 
     def splitPrice(self, priceDict):
@@ -92,7 +94,7 @@ class PredictPrice():
         events = self.standardizeCols(events, numFollowersCols+["daysUntilConcert"])
 
         # Drop unneeded cols
-        events = events.drop(columns=["date", "dateAccessed", "maxPrice", "scID"])
+        events = events.drop(columns=["id", "artistID","date", "dateAccessed", "maxPrice", "scID"])
 
         # Split into testing and training
         (xTrain, yTrain), (xTest, yTest) = self.buildXYTestTrain(events, "minPrice") 
@@ -103,8 +105,15 @@ class PredictPrice():
             "xTest": xTest,
             "yTest": yTest
         }
-
-
-
+    
+    def trainModel(self):
+        X, y = self.processedData.get("xTrain"), self.processedData.get("yTrain")
+        self.model.train(X, y)
+        self.model.saveModel()
+    
+    def evaluateModel(self):
+        XTest, yTest = self.processedData.get("xTest"), self.processedData.get("yTest")
+        self.model.evaluate(XTest, yTest)
+    
 if __name__ == "__main__":
     pp = PredictPrice()
